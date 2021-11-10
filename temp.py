@@ -9,6 +9,7 @@ def start_game():
     temp = r.json()
     deck_id = temp['deck_id']
     print(deck_id)
+    # Initialize Both Hands
     for x in range (1,3):
         for x in range (1,8):
     #       Add card to player hand
