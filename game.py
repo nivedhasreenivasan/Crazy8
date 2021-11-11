@@ -29,7 +29,7 @@ def start_game():
     print(r.json())
     temp = r.json()
     deck_id = temp['deck_id']
-    global imageArr
+    imageArr = []
     #print(deck_id)
     # Initialize Both Hands
     for x in range (1,3):
@@ -39,7 +39,7 @@ def start_game():
             code = temp_drawed_card[0]['code']
             image = temp_drawed_card[0]['image']
             r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/player'+str(x)+'/add/?cards='+code)
-            imageArr = imageArr.append(image)
+            imageArr.append(image)
     for x in imageArr:
         cardImage = Image.open(str(x), mode='r')
         cardImage = ImageTk.PhotoImage(cardImage)
@@ -47,7 +47,7 @@ def start_game():
         u.place(x=600,y=525)
 
 def cardClicked():
-
+    pass
 def draw_card():
     # print('https://deckofcardsapi.com/api/deck/'+deck_id+'/draw/?count=1')
     r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/draw/?count=1')
