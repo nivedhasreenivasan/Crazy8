@@ -132,72 +132,19 @@ playerNum = 1 #default
 w = tk.Label(root, text="Player " + str(playerNum))
 w.pack()
 
-x1 = 10
-y1 = 200
-x2 = 10
-y2 = 300
+x1 = 30
+y1 = 450
+x2 = 30
+y2 = 670
 for x in player1ButtonList:
-        x1 += 50
-        x.place(x=x1,y=y1)
+    x1 += 150
+    x.place(x=x1,y=y1)
 for y in player2ButtonList:
-        x2 += 50
-        y.place(x=x2,y=y2)
+    x2 += 150
+    y.place(x=x2,y=y2)
         
 def start_game():
-    
-    global deck_id
-    r = requests.get('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1')
-    temp = r.json()
-    deck_id = temp['deck_id']
-    codeArr = []
-    # Initialize Both Hands
-    for x in range (1,3):
-        for x in range (1,8):
-    #       Add card to player hand
-            temp_drawed_card = draw_card()
-            code = temp_drawed_card[0]['code']
-            r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/player'+str(x)+'/add/?cards='+code)
-            codeArr.append(code)
-    for x in codeArr :
-            splitArr = list(str(x))
-            if(len(splitArr) == 2 and splitArr[0] == 'A'):
-                    print (splitArr[1].lower() + "01.png")
-                    cardImage = Image.open(splitArr[1].lower() + "01.png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif (len(splitArr) == 2 and splitArr[0] == 'K'):
-                    cardImage = Image.open(splitArr[1].lower() + "13.png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif (len(splitArr) == 2 and splitArr[0] == 'Q'):
-                    cardImage = Image.open(splitArr[1].lower() + "12.png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif (len(splitArr) == 2 and splitArr[0] == '0'):
-                    cardImage = Image.open(splitArr[1].lower() + "10.png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif (len(splitArr) == 2 and splitArr[0] == 'J'):
-                    cardImage = Image.open(splitArr[1].lower() + "11.png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif(len(splitArr) == 2):
-                    cardImage = Image.open(str(splitArr[1]).lower() + '0' + str(splitArr[0]) + ".png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            elif(len(splitArr) == 3):
-                    cardImage = Image.open(str(splitArr[3]).lower() + str(splitArr[0])  + str(splitArr[1]) + ".png", mode='r')
-                    cardImage = ImageTk.PhotoImage(cardImage)
-                    cardButton = Button(root, image=cardImage, command=lambda: cardClicked(cardButton))
-                    cardButton.place(x=600,y=525)
-            
-
+    pass
 def draw_card():
     r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/draw/?count=1')
     drawed_card = r.json()['cards']
