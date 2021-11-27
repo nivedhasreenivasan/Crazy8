@@ -5,7 +5,9 @@ from PIL import ImageTk, Image
 import requests
 import json
 from io import BytesIO
-from urllib.request import Request, urlopen
+from urllib.request import HTTPDefaultErrorHandler, Request, urlopen
+
+from requests.models import to_native_string
 
 root = Tk()
 root.title("Crazy 8")
@@ -15,8 +17,10 @@ root.configure(bg='green')
 player1ButtonList = []
 player2ButtonList = []
 global deck_id 
-global player1Turn
-global player2Turn
+global temp_top_card
+player1Turn = True
+player2Turn = False
+
 r = requests.get('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1')
 temp = r.json()
 deck_id = temp['deck_id']
@@ -79,12 +83,9 @@ for x in player1ButtonList:
 for y in player2ButtonList:
     x2 += 150
     y[0].place(x=x2,y=y2)
-          
-player1Turn = True
-player2Turn = False
 
 def add_to_discard(cardcode):
-    r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+cardcode)
+    r = requests.get('https://deckofcardsapi.com/api/deck/' + deck_id + '/return/?cards='+cardcode)
     print(r.json())
     
 def draw_card():
@@ -99,7 +100,7 @@ def draw_card():
     add_to_discard(code)
     return code
 
-def drawAndPlaceCardForPlayer(str):
+def drawAndPlaceCardForPlayer1():
     drawnCard = draw_card()
     requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+drawnCard)
     imageStart = 'https://deckofcardsapi.com/static/img/'  + drawnCard + '.png'
@@ -108,31 +109,36 @@ def drawAndPlaceCardForPlayer(str):
     im = Image.open(BytesIO(raw_data))
     im = im.resize((100,200),Image.ANTIALIAS)
     photo = ImageTk.PhotoImage(im)
-    addedCard= tk.Button(image=photo,width=100,height=200,compound="c")
+    addedCard= tk.Button(image=photo,width=100,height=200,compound="c",command=lambda code=drawnCard: cardClicked(code,'player1'))
     addedCard.image = photo
     list = [addedCard,drawnCard]
-    if (str == 'player1'):
-        player1ButtonList.append(list)
-        x1 = 30
-        y1 = 450
-        for x in player1ButtonList:
-            x1 += 150
-            x[0].place(x=x1,y=y1)
-    elif (str == 'player2'):
-        player2ButtonList.append(list)
-        x2 = 30
-        y2 = 670
-        for x in player2ButtonList:
-            x2 += 150
-            x[0].place(x=x2,y=y2)
-    # if (player1Turn == True):
-    #     player1Turn == False
-    #     player2Turn == True
-    # elif(player2Turn == True):
-    #     player2Turn == False
-    #     player1Turn == True
-    
-    #add_to_discard(code)
+    player1ButtonList.append(list)
+    x1 = 30
+    y1 = 450
+    for x in player1ButtonList:
+        x1 += 150
+        x[0].place(x=x1,y=y1)
+                    
+            
+def drawAndPlaceCardForPlayer2():
+    drawnCard = draw_card()
+    requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+drawnCard)
+    imageStart = 'https://deckofcardsapi.com/static/img/'  + drawnCard + '.png'
+    u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+    raw_data = urlopen(u).read()
+    im = Image.open(BytesIO(raw_data))
+    im = im.resize((100,200),Image.ANTIALIAS)
+    photo = ImageTk.PhotoImage(im)
+    addedCard= tk.Button(image=photo,width=100,height=200,compound="c",command=lambda code=drawnCard: cardClicked(code,'player2'))
+    addedCard.image = photo
+    list = [addedCard,drawnCard]
+    player2ButtonList.append(list)
+    x2 = 30
+    y2 = 670
+    for x in player2ButtonList:
+        x2 += 150
+        x[0].place(x=x2,y=y2)
+
 
 #place the first discard card
 temp_top_card = draw_card()
@@ -150,15 +156,27 @@ buttonDiscard.place(x = 700, y = 80)
 # print(check_player2_hand())
 
 #create draw button
-drawButton1 = Button(root, text="DRAW CARD", font=("Helvetica", 10), height = 3, width = 10, bg="SystemButtonFace", command=lambda: drawAndPlaceCardForPlayer("player1"))
+drawButton1 = Button(root, text="DRAW CARD", font=("Helvetica", 10), height = 3, width = 10, bg="SystemButtonFace", command=lambda: drawAndPlaceCardForPlayer1())
 drawButton1.place(x = 30, y = 450)
 
-drawButton2 = Button(root, text="DRAW CARD", font=("Helvetica", 10), height = 3, width = 10, bg="SystemButtonFace", command=lambda: drawAndPlaceCardForPlayer("player2"))
+drawButton2 = Button(root, text="DRAW CARD", font=("Helvetica", 10), height = 3, width = 10, bg="SystemButtonFace", command=lambda: drawAndPlaceCardForPlayer2())
 drawButton2.place(x = 30, y = 670)
 
+
+def changePlayer():
+    global player1Turn, player2Turn
+    if(player1Turn == True):
+       player1Turn = False
+       player2Turn = True
+    elif(player2Turn == True):
+       player2Turn = False
+       player1Turn = True
+        
+# print(player1ButtonList)
+# print(player2ButtonList)
 def cardClicked(b, playername):
-    print(playername == 'player1')
     global temp_top_card
+    
     if( player1Turn == True and playername == 'player1' and b[0:1] == temp_top_card[0:1]):
         temp_top_card = b
         requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
@@ -176,55 +194,98 @@ def cardClicked(b, playername):
             if(x[1] == b):
                 x[0].destroy()
                 player1ButtonList.remove(x)
-                player1Turn == False
-                player2Turn == True
-        # for x in player2ButtonList:
-        #     if(x[1] == b):
-        #         x[0].destroy() 
-        #         player2ButtonList.remove(x)
-    # elif(len(temp_top_card) == 3 and len(b) == 3 and (b[1:3] == temp_top_card[1:3])):
-    #     temp_top_card = b
-    #     requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
-    #     imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
-    #     u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
-    #     raw_data = urlopen(u).read()
-    #     im = Image.open(BytesIO(raw_data))
-    #     im = im.resize((100,200),Image.ANTIALIAS)
-    #     photo = ImageTk.PhotoImage(im)
-    #     buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
-    #     buttonDiscard.image = photo
-    #     buttonDiscard.place(x = 700, y = 80)
+        changePlayer()            
+    elif( player2Turn == True and playername == 'player2' and b[0:1] == temp_top_card[0:1]):
+        temp_top_card = b
+        requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
+        imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
+        u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+        raw_data = urlopen(u).read()
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((100,200),Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(im)
+        buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
+        buttonDiscard.image = photo
+        buttonDiscard.place(x = 700, y = 80)
+    
+        for x in player2ButtonList:
+            if(x[1] == b):
+                x[0].destroy() 
+                player2ButtonList.remove(x)
+        changePlayer()
         
-    #     for x in player1ButtonList:
-    #         if(x[1] == b):
-    #             x[0].destroy()
-    #             player1ButtonList.remove(x)
-    #     for x in player2ButtonList:
-    #         if(x[1] == b):
-    #             x[0].destroy()
-    #             player2ButtonList.remove(x) 
-    # elif(len(temp_top_card) == 2 and len(b) == 2 and (b[1:2] == temp_top_card[1:2])):
-    #     temp_top_card = b
-    #     requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
-    #     imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
-    #     u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
-    #     raw_data = urlopen(u).read()
-    #     im = Image.open(BytesIO(raw_data))
-    #     im = im.resize((100,200),Image.ANTIALIAS)
-    #     photo = ImageTk.PhotoImage(im)
-    #     buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
-    #     buttonDiscard.image = photo
-    #     buttonDiscard.place(x = 700, y = 80)
+    elif(player1Turn == True and playername == 'player1' and len(temp_top_card) == 3 and len(b) == 3 and (b[1:3] == temp_top_card[1:3])):
+        temp_top_card = b
+        requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
+        imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
+        u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+        raw_data = urlopen(u).read()
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((100,200),Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(im)
+        buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
+        buttonDiscard.image = photo
+        buttonDiscard.place(x = 700, y = 80)
         
-    #     for x in player1ButtonList:
-    #         if(x[1] == b):
-    #             x[0].destroy()
-    #             player1ButtonList.remove(x)
-    #     for x in player2ButtonList:
-    #         if(x[1] == b):
-    #             x[0].destroy() 
-    #             player2ButtonList.remove(x)
-                
+        for x in player1ButtonList:
+            if(x[1] == b):
+                x[0].destroy()
+                player1ButtonList.remove(x)
+        changePlayer()      
+          
+    elif(player2Turn == True and playername == 'player2' and len(temp_top_card) == 3 and len(b) == 3 and (b[1:3] == temp_top_card[1:3])):
+        temp_top_card = b
+        requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
+        imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
+        u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+        raw_data = urlopen(u).read()
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((100,200),Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(im)
+        buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
+        buttonDiscard.image = photo
+        for x in player2ButtonList:
+            if(x[1] == b):
+                x[0].destroy()
+                player2ButtonList.remove(x) 
+        changePlayer()
+        
+    elif(player1Turn == True and playername == 'player1' and len(temp_top_card) == 2 and len(b) == 2 and (b[1:2] == temp_top_card[1:2])):
+        temp_top_card = b
+        requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
+        imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
+        u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+        raw_data = urlopen(u).read()
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((100,200),Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(im)
+        buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
+        buttonDiscard.image = photo
+        buttonDiscard.place(x = 700, y = 80)
+        
+        for x in player1ButtonList:
+            if(x[1] == b):
+                x[0].destroy()
+                player1ButtonList.remove(x)
+        changePlayer()
+        
+    elif(player2Turn == True and playername == 'player2' and len(temp_top_card) == 2 and len(b) == 2 and (b[1:2] == temp_top_card[1:2])):
+        temp_top_card = b
+        requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/add/?cards='+temp_top_card)
+        imageStart = 'https://deckofcardsapi.com/static/img/'  + temp_top_card + '.png'
+        u = Request(imageStart, headers={'User-Agent': 'Mozilla/5.0'})
+        raw_data = urlopen(u).read()
+        im = Image.open(BytesIO(raw_data))
+        im = im.resize((100,200),Image.ANTIALIAS)
+        photo = ImageTk.PhotoImage(im)
+        buttonDiscard = tk.Button(image=photo,width=100,height=200,compound="c")
+        buttonDiscard.image = photo
+        buttonDiscard.place(x = 700, y = 80)
+        for x in player2ButtonList:
+            if(x[1] == b):
+                x[0].destroy() 
+                player2ButtonList.remove(x)
+        changePlayer()        
     x1 = 30
     y1 = 450
     x2 = 30
@@ -239,17 +300,8 @@ def cardClicked(b, playername):
     # print(player1ButtonList)
     # print(player2ButtonList)
     
-
 def restart_game():
     r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/return/')
     print(r.json())
-
-def skip(self):
-    global skipButton
-    global clicked
-    self.clicked = True
-    skipButton = Button(root, text="SKIP", font=("Helvetica", 7), height = 3, width = 9, bg="SystemButtonFace", command=lambda: skip_click(skipButton))
-    skipButton.place(x=710,y=650)
-
 
 root.mainloop()
