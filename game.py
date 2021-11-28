@@ -6,7 +6,7 @@ import requests
 import json
 from io import BytesIO
 from urllib.request import HTTPDefaultErrorHandler, Request, urlopen
-
+from tkinter import messagebox
 from requests.models import to_native_string
 
 root = Tk()
@@ -21,7 +21,7 @@ temp_top_card = None
 currentClickedCard = None
 player1Turn = False
 player2Turn = True
-listOfCards = {"AH", "AC", "AS", "AD", "2H", "2C", "2S", "2D"}
+listOfCards = {"AH", "AC", "AS", "AD", "2H", "2C", "2S", "2D", "3H", "3C", "3S", "3D", "4H", "4C", "4S", "4D", "5H", "5C", "5S", "5D", "6H", "6C", "6S", "6D", "7H", "7C", "7S", "7D", "8H", "8C", "8S", "8D", "9H", "9C", "9S", "9D", "0H", "0C", "0S", "0D", "JH", "JC", "JS", "JD", "QH", "QC", "QS", "QD", "KH", "KC", "KS", "KD"}
 
 r = requests.get('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1')
 temp = r.json()
@@ -126,7 +126,11 @@ def crazy8Pick(crazy8Choice):
                 x2 += 150
                 y[0].place(x=x2,y=y2)   
             changePlayer()
-    
+        # winner
+    if (len(player2ButtonList) == 0):
+        messagebox.showinfo('WINNER', 'PLAYER 2 WINS!')
+    elif (len(player1ButtonList) == 0):
+        messagebox.showinfo('WINNER', 'PLAYER 1 WINS!')
 x1 = 30
 y1 = 450
 x2 = 30
@@ -143,6 +147,7 @@ def display_selected (choice):
     choice = variable.get()
     crazy8Choice = choice
     crazy8Pick(crazy8Choice)
+    
 variable = StringVar(root)
 variable.set("pick a card (if 8 was placed)") # default value
 cardMenu = OptionMenu(root, variable, *listOfCards, command = display_selected)
@@ -377,8 +382,10 @@ def cardClicked(b, playername):
     # print(player1ButtonList)
     # print(player2ButtonList)
     
-def restart_game():
-    r = requests.get('https://deckofcardsapi.com/api/deck/'+deck_id+'/pile/discard/return/')
-    print(r.json())
-
+    # winner
+    if (len(player2ButtonList) == 0):
+        messagebox.showinfo('WINNER', 'PLAYER 2 WINS!')
+    elif (len(player1ButtonList) == 0):
+        messagebox.showinfo('WINNER', 'PLAYER 1 WINS!')
+        
 root.mainloop()
